@@ -17,7 +17,7 @@ La solución adopta un enfoque de *Edge Computing* y aislamiento forense dividid
 ## Estructura del Repositorio
 
 * `src/`
-    * `evaluador_llm.py`: Script principal en Python que lee los registros de auditoría, estructura el prompt del sistema bajo un esquema estricto de respuesta JSON y despacha las peticiones HTTP por API.
+    * `evaluador_llm_mistral.py`/`evaluador_llm_phi3.py`: Script principal en Python que lee los registros de auditoría, estructura el prompt del sistema bajo un esquema estricto de respuesta JSON y despacha las peticiones HTTP por API.
     * `clasificador_regex.py`: Módulo de control estático lineal que evalúa sintácticamente las cadenas de texto del log utilizando expresiones regulares tradicionales.
 * `config/`
     * `custom.rules`: Archivo con las directivas inyectadas en `/etc/audit/rules.d/` para vigilar la manipulación de `/etc/shadow`, `/etc/sudoers` y llamadas `execve` con privilegios de root.
