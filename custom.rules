@@ -1,0 +1,11 @@
+# Regla 1: acceso a /etc/passwd
+-w /etc/passwd -p rwa -k passwd_changes
+
+# Regla 2: modificaciones a /etc/sudoers
+-w /etc/sudoers -p rwa -k sudoers_changes
+
+# Regla 3: ejecucion de comandos como root
+-a always,exit -F arch=b64 -S execve -F uid=0 -k root_commands
+
+# Regla 4: acceso a /etc/shadow
+-w /etc/shadow -p rwa -k shadow_access
