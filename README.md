@@ -9,22 +9,21 @@ El proyecto evalúa y contrasta la eficacia analítica (comprensión semántica)
 ## Arquitectura General
 
 La solución adopta un enfoque de *Edge Computing* y aislamiento forense dividido en dos componentes principales:
-1. **Entorno Víctima (Máquina Virtual):** Un servidor emulado en *Oracle VirtualBox* corriendo *Ubuntu Server*. Utiliza el framework de auditoría nativo del kernel (`auditd`) mediante reglas personalizadas (`custom.rules`) para registrar *syscalls* críticas. Un script orquestador en **Python** procesa la telemetría en ventanas de 3 minutos.
+1. **Entorno Víctima (Máquina Virtual):** Un servidor emulado en *Oracle VirtualBox* corriendo *Ubuntu Server* con 2048 MB de RAM, una CPU de 2 núcleos virtuales y un disco de 20 GB. Utiliza el framework de auditoría nativo del kernel (`auditd`) mediante reglas personalizadas (`custom.rules`) para registrar *syscalls* críticas. Un script orquestador en **Python** procesa la telemetría en ventanas de 3 minutos.
 2. **Entorno de Inferencia (Host Físico):** Servidor local montado sobre *LM Studio* que expone una API REST local (puerto 1234) compatible con OpenAI. Realiza una descarga híbrida de capas (*offloading*) combinando la CPU con la GPU (AMD Radeon RX 570 4GB) utilizando la API gráfica **Vulkan**.
 
 ---
 
 ## Estructura del Repositorio
 
-* `src/`
-    * `evaluador_llm_mistral.py`/`evaluador_llm_phi3.py`: Script principal en Python que lee los registros de auditoría, estructura el prompt del sistema bajo un esquema estricto de respuesta JSON y despacha las peticiones HTTP por API.
-    * `clasificador_regex.py`: Módulo de control estático lineal que evalúa sintácticamente las cadenas de texto del log utilizando expresiones regulares tradicionales.
-* `config/`
-    * `custom.rules`: Archivo con las directivas inyectadas en `/etc/audit/rules.d/` para vigilar la manipulación de `/etc/shadow`, `/etc/sudoers` y llamadas `execve` con privilegios de root.
-* `datasets/`
-    * `V-ATK-01.txt`: Telemetría cruda simulando una intrusión coordinada multi-paso (escalada de privilegios).
-    * `V-ADM-01.txt`: Registros de mantenimiento administrativo legítimo de alta densidad (control de falsos positivos).
-    * `V-NRM-01.txt`: Logs de ruido cotidiano y actividad rutinaria del sistema operativo.
+
+* `evaluador_llm_mistral.py`/`evaluador_llm_phi3.py`: Script principal en Python que lee los registros de auditoría, estructura el prompt del sistema bajo un esquema estricto de respuesta JSON y despacha las peticiones HTTP por API.
+* `clasificador_regex.py`: Módulo de control estático lineal que evalúa sintácticamente las cadenas de texto del log utilizando expresiones regulares tradicionales.
+* `custom.rules`: Archivo con las directivas inyectadas en `/etc/audit/rules.d/` para vigilar la manipulación de `/etc/shadow`, `/etc/sudoers` y llamadas `execve` con privilegios de root.
+* `V-ATK-01.txt`: Telemetría cruda simulando una intrusión coordinada multi-paso (escalada de privilegios).
+* `V-ADM-01.txt`: Registros de mantenimiento administrativo legítimo de alta densidad (control de falsos positivos).
+* `V-NRM-01.txt`, `V-NRM-02.txt`, `V-NRM-03.txt`: Logs de ruido cotidiano y actividad rutinaria del sistema operativo.
+* `ground_truth.csv`: tabla con el resultado ideal de las pruebas.
 
 ---
 
@@ -35,6 +34,15 @@ La solución adopta un enfoque de *Edge Computing* y aislamiento forense dividid
     * `Mistral-7B-Instruct-v0.3.Q4_K_M.gguf`
     * `Phi-3-mini-4k-instruct-q4.gguf`
 * Servidor de inferencia de LM Studio activo en `http://localhost:1234`.
+
+## Configuración de la Máquina Virtual (VirtualBox)
+Para que el script en Python y el entorno de inferencia (LM Studio) puedan comunicarse entre el Host y la VM, es mandatorio configurar la interfaz de red de la siguiente manera:
+
+1. Apagar la máquina virtual en VirtualBox.
+2. Ir a **Configuración > Red**.
+3. En el **Adaptador 1**, asegurarse de que esté habilitado y seleccionar en el menú desplegable "Conectado a:": **Adaptador Puente (Bridged Adapter)**.
+4. En el campo "Nombre", seleccionar la tarjeta de red activa de tu Host (Wi-Fi o Ethernet).
+5. Iniciar la VM y verificar la dirección IP asignada ejecutando `ip a`. El host físico y la máquina virtual deben pertenecer a la misma subred (por ejemplo, en el rango `192.168.0.X`).
 
 ---
 
@@ -47,9 +55,10 @@ La solución adopta un enfoque de *Edge Computing* y aislamiento forense dividid
 
 2. **Ejecutar el pipeline automatizado:**
    Para procesar las ventanas lógicas y enviar las solicitudes al motor de IA local, ejecutá el pipeline por cada modelo de LLM:
-   `python src/evaluador_llm.py`
-   `python src/evaluador_llm_mistral.py`
-   `python src/evaluador_llm_phi3.py`
+   ```bash
+   python src/evaluador_llm.py
+   python src/evaluador_llm_mistral.py
+   python src/evaluador_llm_phi3.py
    
 3. **Ejecutar la línea base (Regex):**
    Para comparar los resultados semánticos con la lógica de control tradicional: `python src/clasificador_regex.py`
