@@ -44,6 +44,22 @@ Para que el script en Python y el entorno de inferencia (LM Studio) puedan comun
 4. En el campo "Nombre", seleccionar la tarjeta de red activa de tu Host (Wi-Fi o Ethernet).
 5. Iniciar la VM y verificar la dirección IP asignada ejecutando `ip a`. El host físico y la máquina virtual deben pertenecer a la misma subred (por ejemplo, en el rango `192.168.0.X`).
 
+## Configuración de la Telemetría (Sensor `auditd` en la VM)
+
+Para que el sistema operativo víctima genere los eventos específicos que el pipeline de Python analiza, se deben cargar las reglas personalizadas de auditoría:
+
+1. Dentro de la máquina virtual, clonar este repositorio o transferir el archivo `config/custom.rules`.
+2. Copiar el archivo de reglas al directorio correspondiente de `auditd`:
+   ```bash
+   sudo cp config/custom.rules /etc/audit/rules.d/custom.rules
+3. Regenerar y cargar el set de reglas activo en el Kernel mediante el script nativo de automatización:
+   ```Bash
+      sudo augenrules --load
+4. (Opcional) Verificar que las reglas se hayan inyectado correctamente en el sistema ejecutando:
+   ```Bash
+      sudo auditctl -l
+Deberían listarse los filtros asociados a las claves (`-k`) de `passwd_changes`, `sudoers_changes` y `root_commands`.
+
 ---
 
 ## 🛠️ Instalación y Uso
