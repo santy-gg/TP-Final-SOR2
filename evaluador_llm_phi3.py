@@ -112,6 +112,9 @@ def ejecutar_pipeline():
 	if not os.path.exists(ruta_csv):
 		print(f"[-] ERROR fatal: No se encuentra el archivo indexador {ruta_csv}")
 		return
+	carpeta_salida = "outputs"
+	if not os.path.exists(carpeta_salida):
+		os.makedirs(carpeta_salida)
 	#Leemos las ventanas registradas en el CSV
 	with open(ruta_csv, mode="r") as csv_file:
 		reader = csv.DictReader(csv_file)
@@ -152,6 +155,17 @@ def ejecutar_pipeline():
 			#IMPRIMIMOS LA MÉTRICA DE TIEMPO
 			print(f"Tiempo de procesamiento: {minutos} min {segundos_restantes:.2f} s ({segundos_totales:.2f} segundos totales)")
 			print ("-" * 80 + "\n")
+
+			# === EXPORTACIÓN A ARCHIVO DE TEXTO INDIVIDUAL ===
+			# Creamos el nombre de archivo dinámico basado en el ID de la ventana analizada
+			nombre_archivo_salida = f"{id_ventana}_resultado_phi3.json"
+			ruta_completa_salida = os.path.join(carpeta_salida, nombre_archivo_salida)
+			
+			with open(ruta_completa_salida, mode="w", encoding="utf-8") as f_out:
+				# Guardamos la respuesta en texto plano (que contiene la estructura JSON de la IA)
+				f_out.write(respuesta_modelo.strip())
+			
+			print(f"    [+] Resultado analítico guardado con éxito en: {ruta_completa_salida}")
 
 if __name__ == "__main__":
 	ejecutar_pipeline()
